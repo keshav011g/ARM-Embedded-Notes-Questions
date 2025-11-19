@@ -20,11 +20,9 @@
 
 This is the primary theme of your course: using a **Host** processor (ARM) to execute code designed for a **Guest** processor (Intel x86 or TMS320 DSP).
 
-### 1.1 The Emulation Loop (The "Fetch-Decode-Execute" Cycle)
+### 1.1 The Emulation Loop (PseudoCode)
 
 You must be able to write this pseudo-code structure from memory. It simulates the hardware's instruction cycle in software.
-
-[Image of fetch-decode-execute cycle diagram]
 
 ```c
 // Define Virtual Registers for the Guest CPU
@@ -124,7 +122,7 @@ This is the exact hardware logic for "What happens when an interrupt occurs?". *
 
 ---
 
-## 3. Practice Test Questions
+## 3. Some Practice Test Questions
 
 ### Section A: Emulation Coding
 
