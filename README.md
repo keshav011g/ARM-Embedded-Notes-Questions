@@ -83,7 +83,7 @@ END WHILE
 
 ## 2. ARM Architecture Hardware Mechanics
 
-This section covers the specific hardware details from your `ARMv7-A/R` manual that appeared in your exam questions.
+This section covers the specific hardware details from `ARMv7-A/R`.
 
 ### 2.1 Processor Modes
 
@@ -101,7 +101,7 @@ ARM has several modes of operation. You need to know the binary codes for the **
 
 ### 2.2 Exception Entry Sequence (CRITICAL)
 
-This is the exact hardware logic for "What happens when an interrupt occurs?". **Memorize this.**
+This is the exact hardware logic for "What happens when an interrupt occurs?".
 
 **Scenario:** An **IRQ** (Interrupt Request) occurs.
 
