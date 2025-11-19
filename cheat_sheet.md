@@ -15,6 +15,9 @@
     - [5.1 Intel 80186: Register Manipulation & Interrupts](#51-intel-80186-register-manipulation--interrupts)
     - [5.2 TMS320C3x: Serial Communication & Registers](#52-tms320c3x-serial-communication--registers)
 - [6. Suggested Additions](#6-suggested-additions)
+    - [6.1 Pin Muxing Tables](#61-pin-muxing-tables)
+    - [6.2 Memory Map Diagrams](#62-memory-map-diagrams)
+    - [6.3 Status Register Flags](#63-status-register-flags)
 
 ---
 
@@ -169,11 +172,50 @@ END WHILE
 ---
 
 ## 6. Suggested Additions
-To make this guide even more comprehensive for an open-book exam, consider adding:
 
-1.  **Pin Muxing Tables:** For both Intel and TMS, knowing which control register bits enable specific external pins (like Timer Out or Serial Data) is crucial.
-2.  **Memory Map Diagrams:** A visual representation of the default memory maps for the specific chips used in your labs/course (e.g., where is the Interrupt Vector Table located? Where are the peripheral control registers mapped?).
-3.  **Status Register Flags:** A breakdown of the specific bits in the Intel FLAGS register (OF, DF, IF, TF, SF, ZF, AF, PF, CF) and the TMS320 ST register.
+### 6.1 Pin Muxing Tables
+
+| Chip | Register | Function | Bits | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Intel 80186** | `P1CON` | Port 1 Control | 0-7 | Set bit `1` to enable alternate peripheral function (e.g. Timer Out), `0` for GPIO. |
+| **TMS320C3x** | `SxRCR` | Serial Receive Control | 0, 4, 8 | Set `b0=1` (Enable Rx), `b4=1` (Enable Rx CLK), `b8=1` (Enable Rx Frame Sync) to mux pins to Serial Port. |
+| **TMS320C3x** | `SxXCR` | Serial Transmit Control | 0, 4, 8 | Set `b0=1` (Enable Tx), `b4=1` (Enable Tx CLK), `b8=1` (Enable Tx Frame Sync) to mux pins to Serial Port. |
+
+### 6.2 Memory Map Diagrams
+
+
+
+* **Intel 80186:**
+    * `0x00000 - 0x003FF`: Interrupt Vector Table (256 vectors * 4 bytes).
+    * `0x00400 - ...`: RAM / User Data.
+    * `... - 0xFFFFF`: Boot ROM (Reset vector at `FFFF0`).
+    * *Note: Peripheral Control Block (PCB) is relocatable, typically at `FF00` in I/O space.*
+
+* **TMS320C3x:**
+    * `0x000000 - 0x0000FF`: Interrupt Vector Table (Reset at `0x00`).
+    * `0x808000 - 0x809FFF`: Peripheral Bus Memory Map (Serial Ports, Timers, DMA).
+        * `0x808040`: Serial Port 0 Global Control.
+        * `0x809800`: Timer 0 Global Control.
+
+### 6.3 Status Register Flags
+
+| Architecture | Register | Flag | Bit | Function |
+| :--- | :--- | :--- | :--- | :--- |
+| **Intel 80x86** | `FLAGS` | **CF** | 0 | Carry Flag (Unsigned Overflow) |
+| | | **PF** | 2 | Parity Flag |
+| | | **AF** | 4 | Auxiliary Carry (BCD math) |
+| | | **ZF** | 6 | Zero Flag (Result is zero) |
+| | | **SF** | 7 | Sign Flag (Result is negative) |
+| | | **TF** | 8 | Trap Flag (Single Step Debugging) |
+| | | **IF** | 9 | Interrupt Enable Flag |
+| | | **DF** | 10 | Direction Flag (String ops: 0=Inc, 1=Dec) |
+| | | **OF** | 11 | Overflow Flag (Signed Overflow) |
+| **TMS320C3x** | `ST` | **C** | 0 | Carry |
+| | | **Z** | 1 | Zero |
+| | | **N** | 2 | Negative |
+| | | **V** | 3 | Overflow |
+| | | **OVM** | 4 | Overflow Mode (Saturation enable) |
+| | | **RM** | 6 | Repeat Mode Flag |
+| | | **GIE** | 13 | Global Interrupt Enable |
 ```
 ```eof
-I've updated the **Reference Guide** with the requested sample questions and suggested additions. You can now copy this entire block into your GitHub `README.md` or print it out.
