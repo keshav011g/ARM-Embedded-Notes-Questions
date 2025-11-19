@@ -1,5 +1,23 @@
 # ARM Exam Reference Guide (Open Book)
 
+## Table of Contents
+
+- [1. Hardware Mechanics "Cheat Sheet"](#1-hardware-mechanics-cheat-sheet)
+    - [1.1 Exception Entry Sequence (Memorize)](#11-exception-entry-sequence-memorize)
+    - [1.2 Processor Modes & Vectors](#12-processor-modes--vectors)
+- [2. Emulation Templates (Recipes)](#2-emulation-templates-recipes)
+    - [2.1 The Emulator Loop (Pseudo-code)](#21-the-emulator-loop-pseudo-code)
+    - [2.2 Translation: Intel (CISC) to ARM (RISC)](#22-translation-intel-cisc-to-arm-risc)
+    - [2.3 Translation: TMS320 (DSP) to ARM](#23-translation-tms320-dsp-to-arm)
+- [3. Register Mapping Table](#3-register-mapping-table)
+- [4. Manual Index (Where to Look)](#4-manual-index-where-to-look)
+- [5. Sample Questions: Intel 80186 & TMS320C3x](#5-sample-questions-intel-80186--tms320c3x)
+    - [5.1 Intel 80186: Register Manipulation & Interrupts](#51-intel-80186-register-manipulation--interrupts)
+    - [5.2 TMS320C3x: Serial Communication & Registers](#52-tms320c3x-serial-communication--registers)
+- [6. Suggested Additions](#6-suggested-additions)
+
+---
+
 ## 1. Hardware Mechanics "Cheat Sheet"
 
 ### 1.1 Exception Entry Sequence (Memorize)
@@ -109,6 +127,53 @@ END WHILE
 * **TMS320C3x User's Guide:**
     * **Registers:** Chapter 3 (CPU Registers).
     * **Serial Port Control:** Chapter 8 (Peripherals).
+
+---
+
+## 5. Sample Questions: Intel 80186 & TMS320C3x
+
+### 5.1 Intel 80186: Register Manipulation & Interrupts
+**Q1: Timer Control Register Programming**
+* **Problem:** Configure Timer 1 of an Intel 80186 to generate a 2kHz square wave. The CPU clock is 16 MHz.
+* **Solution Logic:**
+    * **Calculate Count:** Clock/4 = 4 MHz. 4 MHz / 2 kHz = 2000 counts. Max count register A (CMPA) = 1000 (for half period) or 2000 (full period depending on mode).
+    * **Control Register (T1CON):** Set bits for Enable (`EN`), Continuous Mode (`CONT`), and Interrupt (`INT`) if needed.
+
+**Q2: Interrupt Vector Table**
+* **Problem:** An external interrupt arrives on INT0 (Type 12). Where does the CPU look for the ISR address?
+* **Solution Logic:**
+    * **Vector Address Calculation:** Type * 4.
+    * **Address:** 12 * 4 = 48 = `0x030`.
+    * **Action:** The CPU reads 4 bytes from `0000:0030` (2 bytes for IP, 2 bytes for CS) and jumps there.
+
+### 5.2 TMS320C3x: Serial Communication & Registers
+**Q1: Serial Port Configuration (Control Registers)**
+* **Problem:** Configure TMS320C3x Serial Port 0 for:
+    * 32-bit fixed data length.
+    * Internal Transmit Clock.
+    * No Handshaking.
+* **Solution Logic:**
+    * **Register:** `S0GCR` (Global Control Register).
+    * **Bits:**
+        * `RLEN` (Bits 22-21): Set to `11` (32-bit).
+        * `CLKXP` (Bit 12): Set to `1` (Internal Clock).
+        * `HS` (Bit 5): Set to `0` (No handshake).
+
+**Q2: Circular Buffer Addressing**
+* **Problem:** You have a buffer of size 100 words starting at `0x1000`. Write TMS assembly to read data circularly using `AR0`.
+* **Solution Logic:**
+    * **Registers:** `BK` (Block Size) = 100. `AR0` (Pointer) = `0x1000`.
+    * **Instruction:** `LDI *AR0++%, R0`.
+    * **Meaning:** `%` enables circular modification. The hardware ensures `AR0` wraps from `0x1063` back to `0x1000`.
+
+---
+
+## 6. Suggested Additions
+To make this guide even more comprehensive for an open-book exam, consider adding:
+
+1.  **Pin Muxing Tables:** For both Intel and TMS, knowing which control register bits enable specific external pins (like Timer Out or Serial Data) is crucial.
+2.  **Memory Map Diagrams:** A visual representation of the default memory maps for the specific chips used in your labs/course (e.g., where is the Interrupt Vector Table located? Where are the peripheral control registers mapped?).
+3.  **Status Register Flags:** A breakdown of the specific bits in the Intel FLAGS register (OF, DF, IF, TF, SF, ZF, AF, PF, CF) and the TMS320 ST register.
 ```
 ```eof
-This **Reference Guide** is designed to be your primary resource during the exam. It contains the exact answers to the most common question types. Good lu
+I've updated the **Reference Guide** with the requested sample questions and suggested additions. You can now copy this entire block into your GitHub `README.md` or print it out.
