@@ -120,13 +120,95 @@ LDI 0x018000C0, R0  ; Example Value
 STI R0, @S0GCR
 ```
 
+### 3.4 Communication Example: Handshake Mode
+**Q:** Write a routine to send data on Serial Port 0 only when the external device is ready (Handshake Mode).
+**Code:**
+```assembly
+; 1. Configure Handshake (HS=1)
+LDI  0x01800060, R0     ; Load Config: HS=1, XLEN=32, XCLK=1
+STI  R0, @S0GCR
+
+; 2. Enable Pins
+LDI  0x111, R0          ; Enable DX, CLKX, FSX
+STI  R0, @S0XCR
+
+; 3. Transmit Loop (Wait for XRDY)
+Tx_Loop:
+    LDI  @S0GCR, R0     ; Read Status
+    TSTB 0x2, R0        ; Check Bit 1 (XRDY)
+    BZ   Tx_Loop        ; If 0, wait
+
+    STI  R1, @DXR0      ; Send Data from R1
+```
+
 ---
 
-## 4. Interrupts (Chapter 7)
+## 4. Direct Memory Access (DMA) Controller (Chapter 12)
+
+The DMA controller moves data between memory and peripherals (like Serial Ports) without CPU intervention. This is faster and frees the CPU for processing.
+
+### 4.1 Key Registers
+* **DMA_GCR:** Global Control Register (`0x808000` for Ch0).
+* **DMA_SRC:** Source Address Register (`0x808004`).
+* **DMA_DST:** Destination Address Register (`0x808006`).
+* **DMA_CTR:** Transfer Counter Register (`0x808008`).
+
+### 4.2 DMA Global Control Register (DMA_GCR)
+This register controls *how* data is moved and what triggers the move.
+
+* **RUN (Bit 0-1):** `00`=Stop, `11`=Start.
+* **DECR (Bit 2):** Decrement Destination Address.
+* **INCR (Bit 3):** Increment Destination Address.
+* **SYNC (Bits 6-7):** Synchronization Mode.
+    * `00` = No Sync (Free run, move as fast as possible).
+    * `01` = Source Sync (Wait for source ready, e.g., Serial Rx).
+    * `10` = Destination Sync (Wait for dest ready, e.g., Serial Tx).
+* **TC (Bit 10):** Transfer Count Interrupt Enable.
+* **PRI (Bit 13):** Priority (0=Low, 1=High).
+
+### 4.3 How DMA Works (The Process)
+1.  **Set Source & Dest:** You tell the DMA *where* to read from and *where* to write to.
+2.  **Set Count:** You tell it *how many* words to move.
+3.  **Set Sync:** You tell it *when* to move. For Serial Receive, you sync to **RINT** (Receive Interrupt). The DMA sees the "Data Ready" signal before the CPU interrupt logic does.
+4.  **Start:** Set the RUN bits.
+
+### 4.4 Potential Exam Question: DMA Transfer
+**Q:** Configure DMA Channel 0 to move 1024 words from Serial Port 0 Receive Register (`0x80804C`) to a buffer at `0x1000`. Use interrupt synchronization.
+**Solution Logic:**
+1.  **Source:** `0x80804C` (Fixed address, do not increment).
+2.  **Dest:** `0x1000` (Buffer start, increment after each write).
+3.  **Count:** `1024`.
+4.  **Sync:** Source Synchronization (Wait for RINT0).
+
+**Code:**
+```assembly
+; 1. Set Addresses
+LDI  0x80804C, R0
+STI  R0, @DMA_SRC0      ; Source = Serial DRR
+
+LDI  0x1000, R0
+STI  R0, @DMA_DST0      ; Dest = Memory Buffer
+
+; 2. Set Count
+LDI  1024, R0
+STI  R0, @DMA_CTR0      ; Count = 1024
+
+; 3. Configure Control
+; RUN=11 (Start), INCR=1 (Dest+), SYNC=01 (Source Sync)
+; Binary: ...0100 0000 1011 (Verify bit positions in manual!)
+LDI  0x40B, R0          ; Example Config Word
+STI  R0, @DMA_GCR0
+```
+
+
+
+---
+
+## 5. Interrupts (Chapter 7)
 
 The 'C3x supports vectored interrupts.
 
-### 4.1 Vector Table
+### 5.1 Vector Table
 * Located at `0x000000` to `0x00003F`.
 * **Reset:** `0x00`.
 * **INT0:** `0x01`.
@@ -137,12 +219,12 @@ The 'C3x supports vectored interrupts.
 * **RINT0:** `0x06` (Serial Port 0 Recv).
 * **TINT0:** `0x09` (Timer 0).
 
-### 4.2 Key Registers
+### 5.2 Key Registers
 * **IE (Interrupt Enable):** Individual enable bits.
 * **IF (Interrupt Flag):** Pending status.
 * **ST (Status Register):** Global Interrupt Enable (`GIE` bit 13).
 
-### 4.3 Potential Exam Question: Enable Timer Interrupt
+### 5.3 Potential Exam Question: Enable Timer Interrupt
 **Q:** Write code to enable the Timer 0 Interrupt (TINT0) and the Global Interrupt Enable.
 **Solution Logic:**
 1.  **Bit Mask:** TINT0 corresponds to a specific bit in `IE` (e.g., bit 9).
@@ -157,7 +239,7 @@ OR  0x2000, ST      ; Enable GIE in ST
 
 ---
 
-## 5. Addressing Modes (Chapter 6)
+## 6. Addressing Modes (Chapter 6)
 
 Your professor emphasizes translation, so understanding TMS addressing is key.
 
@@ -169,14 +251,14 @@ Your professor emphasizes translation, so understanding TMS addressing is key.
 * **Circular:** `LDI *AR0++%, R0` (Requires `BK` register setup).
 * **Bit-Reversed:** `LDI *AR0++B, R0` (Used for FFT).
 
-### 5.1 Circular Buffer Logic
+### 6.1 Circular Buffer Logic
 When using `%`, the address calculation is:
 `Next_Addr = (Current_Addr + Step) MOD Block_Size`
 (Hardware handles the wrapping automatically if `BK` is set).
 
 ---
 
-## 6. Instruction Set Highlights (Appendix A)
+## 7. Instruction Set Highlights (Appendix A)
 
 * **Load/Store:**
     * `LDI` (Load Integer).
@@ -199,7 +281,7 @@ When using `%`, the address calculation is:
 
 ---
 
-## 7. Sample Exam Question: FIR Filter Loop
+## 8. Sample Exam Question: FIR Filter Loop
 **Q:** Write a TMS320C3x assembly loop to calculate one output of an FIR filter: $y = \sum (h[i] * x[i])$. Use parallel instructions.
 **Code:**
 ```assembly
@@ -220,4 +302,5 @@ STI   R0, @y_addr   ; Store Result
 ```
 ```
 ```eof
-I have created the **TMS320C3x Notes** file, covering registers, timers, serial ports, interrupts, and instruction set highlights, complete with sample exam questions and code.
+I've updated the **TMS320C3x DSP Exam Notes** to include a new section on **Direct Memory Access (DMA)** with explanations and code examples, and added a specific code example for **Handshake Mode** communication in the Serial Ports section.
+```
